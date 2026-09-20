@@ -31,7 +31,11 @@ class Handler(BaseHTTPRequestHandler):
             body = f"Job accepted. Check /result?token={token} later."
         elif parsed.path == "/result":
             token = query.get("token", [""])[0]
-            result = (RESULTS / token).read_text(encoding="utf-8") if token and (RESULTS / token).is_file() else "pending"
+            result = (
+                (RESULTS / token).read_text(encoding="utf-8")
+                if token and (RESULTS / token).is_file()
+                else "pending"
+            )
             body = f"<h1>Blind SSRF result</h1><pre>{html.escape(result)}</pre>"
         else:
             body = "<h1>Blind SSRF</h1><p>Submit a URL. The response body is never returned.</p>"

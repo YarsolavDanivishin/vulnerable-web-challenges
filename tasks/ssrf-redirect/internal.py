@@ -1,5 +1,17 @@
+import hashlib
 import os
+import secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+def generate_flag() -> str:
+    configured = os.environ.get("FLAG")
+    if configured:
+        return configured
+    return hashlib.sha256(secrets.token_bytes(32)).hexdigest()
+
+
+FLAG = generate_flag()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -7,7 +19,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/flag":
             self.send_error(404)
             return
-        body = os.environ.get("FLAG", "vladilk{local-ssrf-redirect}").encode()
+        body = FLAG.encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(body)))

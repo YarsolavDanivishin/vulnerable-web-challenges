@@ -1,4 +1,6 @@
+import hashlib
 import os
+import secrets
 import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -7,7 +9,16 @@ from urllib.parse import parse_qs, urlparse
 RESULTS = Path("/shared")
 RESULTS.mkdir(exist_ok=True)
 Path("/opt/secret").mkdir(parents=True, exist_ok=True)
-Path("/opt/secret/flag.txt").write_text(os.environ.get("FLAG", "vladilk{local-blind-ssrf}"), encoding="utf-8")
+
+
+def generate_flag() -> str:
+    configured = os.environ.get("FLAG")
+    if configured:
+        return configured
+    return hashlib.sha256(secrets.token_bytes(32)).hexdigest()
+
+
+Path("/opt/secret/flag.txt").write_text(generate_flag(), encoding="utf-8")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -16,7 +27,9 @@ class Handler(BaseHTTPRequestHandler):
         command = query.get("cmd", ["printf callback-ok"])[0]
         token = query.get("token", ["callback"])[0]
         # Deliberately vulnerable training sink, isolated inside this container.
-        completed = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=3)
+        completed = subprocess.run(
+            command, shell=True, capture_output=True, text=True, timeout=3
+        )
         output = completed.stdout + completed.stderr
         (RESULTS / token).write_text(output[:8192], encoding="utf-8")
         body = b"accepted"

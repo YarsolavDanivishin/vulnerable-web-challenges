@@ -1,5 +1,7 @@
+import hashlib
 import html
 import os
+import secrets
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -7,8 +9,18 @@ from urllib.parse import parse_qs, urlparse
 from urllib.request import urlopen
 
 FLAG_PATH = Path("/opt/secret/flag.txt")
+
+
+def generate_flag() -> str:
+    configured = os.environ.get("FLAG")
+    if configured:
+        return configured
+    return hashlib.sha256(secrets.token_bytes(32)).hexdigest()
+
+
+FLAG = generate_flag()
 FLAG_PATH.parent.mkdir(parents=True, exist_ok=True)
-FLAG_PATH.write_text(os.environ.get("FLAG", "vladilk{local-ssrf-nginx-waf}"), encoding="utf-8")
+FLAG_PATH.write_text(FLAG, encoding="utf-8")
 
 
 class AppHandler(BaseHTTPRequestHandler):
@@ -45,7 +57,7 @@ class InternalHandler(BaseHTTPRequestHandler):
         if self.path != "/admin/flag":
             self.send_error(404)
             return
-        body = os.environ.get("FLAG", "vladilk{local-ssrf-nginx-waf}").encode()
+        body = FLAG.encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(body)))

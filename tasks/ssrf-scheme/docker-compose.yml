@@ -13,4 +13,4 @@ services:
       - "owl.label.conntype=http"
 
 networks:
-  ctfd_frp_containers: {external: true}
+  ctfd_frp_containers: { external: true }

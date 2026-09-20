@@ -32,4 +32,4 @@ volumes:
 
 networks:
   ssrf_net:
-  ctfd_frp_containers: {external: true}
+  ctfd_frp_containers: { external: true }

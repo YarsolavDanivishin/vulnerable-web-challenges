@@ -31,7 +31,7 @@ network for internal services.
 
 ```bash
 cd tasks/error-based
-FLAG='vladilk{local}' docker compose up --build
+FLAG="$(openssl rand -hex 32)" docker compose up --build
 ```
 
 For SSRF tasks, only the `service` container is exposed through Owl. Internal

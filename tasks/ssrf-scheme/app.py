@@ -1,13 +1,24 @@
 import html
+import hashlib
 import os
+import secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 from urllib.request import urlopen
 
 FLAG_PATH = Path("/opt/secret/flag.txt")
+
+
+def generate_flag() -> str:
+    configured = os.environ.get("FLAG")
+    if configured:
+        return configured
+    return hashlib.sha256(secrets.token_bytes(32)).hexdigest()
+
+
 FLAG_PATH.parent.mkdir(parents=True, exist_ok=True)
-FLAG_PATH.write_text(os.environ.get("FLAG", "vladilk{local-ssrf-scheme}"), encoding="utf-8")
+FLAG_PATH.write_text(generate_flag(), encoding="utf-8")
 
 
 def fetch(url: str) -> str:

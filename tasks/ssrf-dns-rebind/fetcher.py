@@ -1,5 +1,7 @@
+import hashlib
 import html
 import os
+import secrets
 import socket
 import struct
 import threading
@@ -9,14 +11,32 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 FLAG_PATH = Path("/opt/secret/flag.txt")
+
+
+def generate_flag() -> str:
+    configured = os.environ.get("FLAG")
+    if configured:
+        return configured
+    return hashlib.sha256(secrets.token_bytes(32)).hexdigest()
+
+
+FLAG = generate_flag()
 FLAG_PATH.parent.mkdir(parents=True, exist_ok=True)
-FLAG_PATH.write_text(os.environ.get("FLAG", "vladilk{local-ssrf-dns-rebind}"), encoding="utf-8")
+FLAG_PATH.write_text(FLAG, encoding="utf-8")
 
 
 def resolve_once(host: str) -> str:
     transaction_id = os.urandom(2)
-    labels = b"".join(bytes([len(label)]) + label.encode() for label in host.split(".")) + b"\0"
-    packet = transaction_id + b"\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00" + labels + struct.pack("!HH", 1, 1)
+    labels = (
+        b"".join(bytes([len(label)]) + label.encode() for label in host.split("."))
+        + b"\0"
+    )
+    packet = (
+        transaction_id
+        + b"\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00"
+        + labels
+        + struct.pack("!HH", 1, 1)
+    )
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as dns:
         dns.settimeout(2)
         dns.sendto(packet, (os.environ.get("DNS_SERVER", "dns"), 5353))
@@ -67,7 +87,7 @@ class InternalHandler(BaseHTTPRequestHandler):
         if self.path != "/admin/flag":
             self.send_error(404)
             return
-        body = os.environ.get("FLAG", "vladilk{local-ssrf-dns-rebind}").encode()
+        body = FLAG.encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(body)))
@@ -78,5 +98,8 @@ class InternalHandler(BaseHTTPRequestHandler):
         return
 
 
-threading.Thread(target=lambda: HTTPServer(("127.0.0.1", 8081), InternalHandler).serve_forever(), daemon=True).start()
+threading.Thread(
+    target=lambda: HTTPServer(("127.0.0.1", 8081), InternalHandler).serve_forever(),
+    daemon=True,
+).start()
 HTTPServer(("0.0.0.0", 80), PublicHandler).serve_forever()
