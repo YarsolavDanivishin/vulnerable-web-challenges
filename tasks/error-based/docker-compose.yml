@@ -1,0 +1,16 @@
+services:
+  service:
+    build: .
+    expose:
+      - "80"
+    environment:
+      - "FLAG=${FLAG}"
+    networks:
+      - ctfd_frp_containers
+    labels:
+      - "owl.proxy=true"
+      - "owl.proxy.port=80"
+      - "owl.label.conntype=http"
+networks:
+  ctfd_frp_containers:
+    external: true

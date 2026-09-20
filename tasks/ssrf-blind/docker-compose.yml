@@ -1,0 +1,35 @@
+services:
+  service:
+    build: .
+    expose:
+      - "80"
+    environment:
+      - "FLAG=${FLAG}"
+    volumes:
+      - results:/shared
+    networks:
+      - ssrf_net
+      - ctfd_frp_containers
+    labels:
+      - "owl.proxy=true"
+      - "owl.proxy.port=80"
+      - "owl.label.conntype=http"
+
+  callback:
+    build: .
+    command: ["python", "callback.py"]
+    environment:
+      - "FLAG=${FLAG}"
+    volumes:
+      - results:/shared
+    expose:
+      - "8080"
+    networks:
+      - ssrf_net
+
+volumes:
+  results:
+
+networks:
+  ssrf_net:
+  ctfd_frp_containers: {external: true}

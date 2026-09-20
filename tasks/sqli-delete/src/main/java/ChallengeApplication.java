@@ -1,0 +1,6 @@
+package ctf;
+
+import org.springframework.boot.*; import org.springframework.boot.autoconfigure.*; import org.springframework.jdbc.core.*; import org.springframework.web.bind.annotation.*; import org.springframework.context.annotation.*;
+@SpringBootApplication @RestController public class ChallengeApplication {static JdbcTemplate db; public static void main(String[] a){SpringApplication.run(ChallengeApplication.class,a);} @Bean CommandLineRunner init(JdbcTemplate t){db=t;return x->{t.execute("CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY, username VARCHAR, email VARCHAR)");t.execute("CREATE TABLE IF NOT EXISTS secret_flag (flag VARCHAR)");t.update("DELETE FROM secret_flag");t.update("INSERT INTO secret_flag VALUES (?)",System.getenv().getOrDefault("FLAG","vladilk{local-sqli-delete}"));t.update("MERGE INTO users KEY(id) VALUES (1,'alice','alice@example.test')");};}
+@GetMapping("/") String delete(@RequestParam(defaultValue="") String id){if(id.isEmpty())return "<h1>Spring SQLi DELETE</h1><form><input name='id'><button>Delete</button></form>";String sql="DELETE FROM users WHERE id='"+id+"'";try{return "<pre>"+sql+"\nDeleted "+db.update(sql)+" row(s)</pre>";}catch(Exception e){return "<pre>H2 error: "+e.getMessage()+"</pre>";}}
+}

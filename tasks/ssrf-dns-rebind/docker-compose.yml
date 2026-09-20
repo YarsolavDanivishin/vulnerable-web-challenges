@@ -1,0 +1,29 @@
+services:
+  service:
+    build: .
+    expose:
+      - "80"
+    environment:
+      - "FLAG=${FLAG}"
+      - "DNS_SERVER=dns"
+    depends_on:
+      - dns
+    networks:
+      - ssrf_net
+      - ctfd_frp_containers
+    labels:
+      - "owl.proxy=true"
+      - "owl.proxy.port=80"
+      - "owl.label.conntype=http"
+
+  dns:
+    build: .
+    command: ["python", "dns.py"]
+    expose:
+      - "5353/udp"
+    networks:
+      - ssrf_net
+
+networks:
+  ssrf_net:
+  ctfd_frp_containers: {external: true}

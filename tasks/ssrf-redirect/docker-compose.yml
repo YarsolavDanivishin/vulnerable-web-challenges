@@ -1,0 +1,34 @@
+services:
+  service:
+    build: .
+    expose:
+      - "80"
+    networks:
+      - ssrf_net
+      - ctfd_frp_containers
+    labels:
+      - "owl.proxy=true"
+      - "owl.proxy.port=80"
+      - "owl.label.conntype=http"
+
+  redirector:
+    build: .
+    command: ["python", "redirector.py"]
+    expose:
+      - "8080"
+    networks:
+      - ssrf_net
+
+  internal:
+    build: .
+    command: ["python", "internal.py"]
+    expose:
+      - "8081"
+    environment:
+      - "FLAG=${FLAG}"
+    networks:
+      - ssrf_net
+
+networks:
+  ssrf_net:
+  ctfd_frp_containers: {external: true}
