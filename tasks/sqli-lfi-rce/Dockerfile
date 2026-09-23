@@ -1,10 +1,19 @@
-FROM golang:1.23-bookworm AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
+
 WORKDIR /src
-COPY go.mod .
-COPY main.go .
-RUN go mod tidy
-RUN CGO_ENABLED=0 go build -o /challenge .
-FROM debian:bookworm-slim
-COPY --from=build /challenge /challenge
+COPY pom.xml .
+RUN mvn -q dependency:go-offline
+COPY src src
+RUN mvn -q package -DskipTests
+
+FROM maven:3.9-eclipse-temurin-17
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openjdk-17-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=build /src/target/sqli-lfi-rce-1.0.jar app.jar
+
 EXPOSE 80
-ENTRYPOINT ["/challenge"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
